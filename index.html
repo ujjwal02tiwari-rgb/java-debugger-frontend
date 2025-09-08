@@ -7,23 +7,22 @@
     <!-- Ensure the correct theme class is applied before rendering.  This inline
          script runs early to prevent a flash of unstyled content (FOUC).  It
          reads the user's stored preference from localStorage and falls back
-         to their OS preference via prefers-color-scheme【665853189734185†L189-L200】. -->
+         to their OS preference via prefers-color-scheme. -->
     <script>
       (function () {
-        const stored = localStorage.getItem('theme');
-        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        if (stored === 'dark' || (!stored && prefersDark)) {
-          document.documentElement.classList.add('dark');
-        }
+        try {
+          const stored = localStorage.getItem('theme');
+          const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+          if (stored === 'dark' || (!stored && prefersDark)) {
+            document.documentElement.classList.add('dark');
+          }
+        } catch (_) {}
       })();
     </script>
   </head>
   <body>
     <div id="root"></div>
-    <!-- Point to our new entry file.  The file was renamed to index.jsx to avoid
-         JSX parsing issues with Vite.  The `type=module` attribute ensures
-         native ESM loading. -->
-    <script type="module" src="/src/index.js"></script>
+    <!-- Point to our new entry file.  The file is index.jsx to avoid JSX parsing issues with Vite. -->
+    <script type="module" src="/src/index.jsx"></scriript>
   </body>
 </html>
-
