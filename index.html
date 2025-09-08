@@ -4,10 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Java Debugger</title>
-    <!-- Ensure the correct theme class is applied before rendering.  This inline
-         script runs early to prevent a flash of unstyled content (FOUC).  It
-         reads the user's stored preference from localStorage and falls back
-         to their OS preference via prefers-color-scheme. -->
+    <!-- Prevent FOUC for dark mode preference -->
     <script>
       (function () {
         try {
@@ -20,9 +17,10 @@
       })();
     </script>
   </head>
-  <body>
+  <body class="bg-slate-50 dark:bg-gray-900">
     <div id="root"></div>
-    <!-- Point to our new entry file.  The file is index.jsx to avoid JSX parsing issues with Vite. -->
-    <script type="module" src="/src/index.jsx"></scriript>
+    <!-- Point to the JSX entry -->
+    <script type="module" src="/src/index.jsx"></script>
   </body>
 </html>
+
