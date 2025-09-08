@@ -1,6 +1,10 @@
 import axios from 'axios';
+import { Client } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
-import Stomp from 'stompjs';
+
+const client = new Client({
+  webSocketFactory: () => new SockJS(`${baseURL}/ws`),
+  reconnectDelay: 500,
 
 class DebugService {
   constructor() {
