@@ -1,6 +1,6 @@
+import { Client } from '@stomp/stompjs';
 import axios from 'axios';
 import SockJS from 'sockjs-client';
-import Stomp from 'stompjs';
 
 class DebugService {
   constructor() {
