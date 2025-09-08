@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Java Debugger – Light/Dark Mode Demo</title>
+  <!-- Load Tailwind via CDN for quick prototyping -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Configure Tailwind to use the `class` strategy for dark mode -->
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#eff6ff',
+              100: '#dbeafe',
+              200: '#bfdbfe',
+              300: '#93c5fd',
+              400: '#60a5fa',
+              500: '#3b82f6',
+              600: '#2563eb',
+              700: '#1d4ed8',
+              800: '#1e40af',
+              900: '#1e3a8a',
+            },
+          },
+        },
+      },
+    }
+  </script>
+  <style>
+    /* Custom scrollbar for event list */
+    .scrollbar-thin::-webkit-scrollbar {
+      width: 4px;
+      height: 4px;
+    }
+    .scrollbar-thin::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .scrollbar-thin::-webkit-scrollbar-thumb {
+      background-color: rgba(0, 0, 0, 0.3);
+      border-radius: 9999px;
+    }
+  </style>
+  <script>
+    // Immediately set the theme on first paint to avoid the flash of unstyled content
+    (function () {
+      const storedTheme = localStorage.getItem('theme');
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      if (storedTheme === 'dark' || (!storedTheme && prefersDark)) {
+        document.documentElement.classList.add('dark');
+      }
+    })();
+
+    function toggleTheme() {
+      const htmlEl = document.documentElement;
+      const isDark = htmlEl.classList.toggle('dark');
+      localStorage.setItem('theme', isDark ? 'dark' : 'light');
+    }
+  </script>
+</head>
+<body class="min-h-screen bg-gray-50 text-gray-800 dark:bg-gray-900 dark:text-gray-100">
+  <!-- Header -->
+  <header class="relative bg-gradient-to-r from-brand-600 to-purple-600 p-6 text-center shadow-md">
+    <!-- Dark mode toggle button -->
+    <button onclick="toggleTheme()" class="absolute top-4 right-4 p-2 rounded-md bg-brand-600 text-white hover:bg-brand-700 focus:outline-none">
+      <!-- Sun icon for light mode -->
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 dark:hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M5 12H4m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 12.728l-.707-.707M6.343 17.657l-.707-.707M12 5a7 7 0 100 14 7 7 0 000-14z" />
+      </svg>
+      <!-- Moon icon for dark mode -->
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 hidden dark:block" fill="currentColor" viewBox="0 0 20 20">
+        <path d="M10 2a1 1 0 01.993.883L11 3v14a1 1 0 01-1.993.117L9 17V3a1 1 0 011-1z"/>
+        <path d="M5.05 5.05a7 7 0 109.9 9.9 7 7 0 00-9.9-9.9z"/>
+      </svg>
+    </button>
+    <h1 class="text-4xl font-extrabold text-white tracking-wide">Java Debugger</h1>
+    <p class="mt-2 text-gray-200">Interactive debugging interface for your Java backend</p>
+  </header>
+
+  <main class="max-w-6xl mx-auto px-4 py-8 space-y-8">
+    <!-- Session Section -->
+    <section class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
+      <h2 class="text-2xl font-semibold mb-4 flex items-center gap-2"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-brand-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m4-2v6m0 0V9a1 1 0 10-2 0v5m2-5h2a2 2 0 012 2v2a2 2 0 01-2 2h-2zM5 10h2M7 6h2m0 12h2m-4-3v-2M9 16H7a2 2 0 01-2-2v-2a2 2 0 012-2h2m0 0h6" /></svg> Create Session</h2>
+      <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">Start a new debugging session with your backend.</p>
+      <button class="px-4 py-2 rounded-lg font-medium bg-brand-600 text-white hover:bg-brand-700 active:bg-brand-800 transition-colors">Start Session</button>
+      <p class="mt-2 text-green-500 text-sm">No session yet. Click to start.</p>
+    </section>
+
+    <!-- Main Class Section -->
+    <section class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
+      <h2 class="text-2xl font-semibold mb-4 flex items-center gap-2"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-brand-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 6h13M8 12h13m-13 6h13M3 6h.01M3 12h.01M3 18h.01" /></svg> Main Class</h2>
+      <div class="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+        <input type="text" placeholder="com.example.Main" class="flex-1 p-2 border rounded-md focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-700 dark:border-gray-600" />
+        <button class="px-4 py-2 rounded-lg font-medium bg-purple-600 text-white hover:bg-purple-700 active:bg-purple-800 transition-colors">Set Main Class</button>
+      </div>
+      <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">Specify the fully qualified name of the main class you want to debug.</p>
+    </section>
+
+    <!-- Breakpoints Section -->
+    <section class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
+      <h2 class="text-2xl font-semibold mb-4 flex items-center gap-2"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-brand-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m2 0a2 2 0 110-4 2 2 0 010 4z" /></svg> Breakpoints</h2>
+      <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">Add and manage breakpoints in your code.</p>
+      <div class="flex flex-col sm:flex-row items-start sm:items-end gap-4">
+        <div class="flex-1">
+          <label class="block text-sm font-medium mb-1" for="className">Class Name</label>
+          <input id="className" type="text" placeholder="com.example.MyClass" class="w-full p-2 border rounded-md focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-700 dark:border-gray-600" />
+        </div>
+        <div class="flex-1">
+          <label class="block text-sm font-medium mb-1" for="lineNumber">Line Number</label>
+          <input id="lineNumber" type="number" placeholder="42" class="w-full p-2 border rounded-md focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-700 dark:border-gray-600" />
+        </div>
+        <button class="px-4 py-2 rounded-lg font-medium bg-emerald-600 text-white hover:bg-emerald-700 active:bg-emerald-800 transition-colors">Add Breakpoint</button>
+      </div>
+      <ul class="mt-4 space-y-2 max-h-40 overflow-y-auto scrollbar-thin">
+        <!-- Example breakpoints list -->
+        <li class="flex justify-between items-center bg-gray-100 dark:bg-gray-700 p-2 rounded-md">
+          <span class="font-mono">com.example.MyClass:42</span>
+          <button class="text-red-500 hover:text-red-600">Remove</button>
+        </li>
+        <!-- More breakpoints can be added here -->
+      </ul>
+    </section>
+
+    <!-- Events Section -->
+    <section class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
+      <h2 class="text-2xl font-semibold mb-4 flex items-center gap-2"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-brand-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 3l-7 7 7 7M5 5h2v14H5V5z" /></svg> Debug Events</h2>
+      <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">View live events from the debugger.</p>
+      <div class="max-h-64 overflow-y-auto scrollbar-thin border-t border-gray-200 dark:border-gray-600 pt-4 space-y-2">
+        <!-- Example events list -->
+        <div class="bg-gray-100 dark:bg-gray-700 p-2 rounded-md font-mono text-sm">Event 1: session started...</div>
+        <div class="bg-gray-100 dark:bg-gray-700 p-2 rounded-md font-mono text-sm">Event 2: breakpoint hit at com.example.MyClass:42...</div>
+        <!-- More events can be added here -->
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="py-6 text-center text-sm text-gray-400 dark:text-gray-500 border-t border-gray-200 dark:border-gray-600">
+    © 2025 Java Debugger. Built with React and Tailwind CSS.
+  </footer>
+</body>
+</html>
