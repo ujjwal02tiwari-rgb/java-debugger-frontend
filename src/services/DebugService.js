@@ -1,16 +1,9 @@
 import axios from 'axios';
-import { Client } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
-
-const client = new Client({
-  webSocketFactory: () => new SockJS(`${baseURL}/ws`),
-  reconnectDelay: 500,
+import Stomp from 'stompjs';
 
 class DebugService {
   constructor() {
-    // Use Vite environment variables to configure the API URL at build time.  In
-    // Vite, `import.meta.env` exposes variables prefixed with `VITE_`.  See
-    // `vite` documentation for details.
     this.baseURL = import.meta.env.VITE_API_BASE_URL || '';
     this.socket = null;
     this.stompClient = null;
@@ -19,44 +12,27 @@ class DebugService {
   }
 
   async createSession() {
-    try {
-      const response = await axios.post(`${this.baseURL}/api/debug/session`);
-      this.sessionId = response.data.sessionId;
-      return this.sessionId;
-    } catch (error) {
-      console.error('Failed to create session:', error);
-      throw error;
-    }
+    const { data } = await axios.post(`${this.baseURL}/api/debug/session`);
+    this.sessionId = data.sessionId;
+    return this.sessionId;
   }
 
-  async launchTarget(mainClass = 'com.example.sample.ExampleApp') {
+  async launchTarget(mainClass) {
     if (!this.sessionId) throw new Error('No active session');
-    
-    try {
-      const response = await axios.post(`${this.baseURL}/api/debug/session/${this.sessionId}/launch`, {
-        mainClass,
-        classpath: ''
-      });
-      return response.data;
-    } catch (error) {
-      console.error('Failed to launch target:', error);
-      throw error;
-    }
+    const { data } = await axios.post(
+      `${this.baseURL}/api/debug/session/${this.sessionId}/launch`,
+      { mainClass, classpath: '' }
+    );
+    return data;
   }
 
   async addBreakpoint(className, line) {
     if (!this.sessionId) throw new Error('No active session');
-    
-    try {
-      const response = await axios.post(`${this.baseURL}/api/debug/session/${this.sessionId}/breakpoint`, {
-        className,
-        line
-      });
-      return response.data;
-    } catch (error) {
-      console.error('Failed to add breakpoint:', error);
-      throw error;
-    }
+    const { data } = await axios.post(
+      `${this.baseURL}/api/debug/session/${this.sessionId}/breakpoint`,
+      { className, line }
+    );
+    return data;
   }
 
   connectWebSocket() {
@@ -64,18 +40,11 @@ class DebugService {
       try {
         this.socket = new SockJS(`${this.baseURL}/ws`);
         this.stompClient = Stomp.over(this.socket);
+        // Disable debug logging
         this.stompClient.debug = null;
-        
-        this.stompClient.connect({}, 
-          (frame) => {
-            resolve();
-          },
-          (error) => {
-            reject(error);
-          }
-        );
-      } catch (error) {
-        reject(error);
+        this.stompClient.connect({}, () => resolve(), (error) => reject(error));
+      } catch (e) {
+        reject(e);
       }
     });
   }
@@ -86,37 +55,35 @@ class DebugService {
         try {
           const event = JSON.parse(message.body);
           this.handleDebugEvent(event);
-        } catch (error) {
-          console.error('Error parsing debug event:', error);
+        } catch (e) {
+          console.error('Error parsing debug event:', e);
         }
       });
     }
   }
 
   handleDebugEvent(event) {
-    this.eventCallbacks.forEach((callback) => {
+    this.eventCallbacks.forEach((cb) => {
       try {
-        callback(event);
-      } catch (error) {
-        console.error('Error in event callback:', error);
+        cb(event);
+      } catch (e) {
+        console.error('Event callback error:', e);
       }
     });
   }
 
-  onDebugEvent(callback) {
-    const id = Date.now() + Math.random();
-    this.eventCallbacks.set(id, callback);
+  onDebugEvent(cb) {
+    const id = `${Date.now()}_${Math.random()}`;
+    this.eventCallbacks.set(id, cb);
     return id;
   }
 
-  offDebugEvent(callbackId) {
-    this.eventCallbacks.delete(callbackId);
+  offDebugEvent(id) {
+    this.eventCallbacks.delete(id);
   }
 
   disconnect() {
-    if (this.stompClient) {
-      this.stompClient.disconnect();
-    }
+    if (this.stompClient) this.stompClient.disconnect();
     this.eventCallbacks.clear();
   }
 }
