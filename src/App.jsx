@@ -16,6 +16,7 @@ export default function App() {
           window.matchMedia("(prefers-color-scheme: dark)").matches))
   );
 
+  // Theme toggle
   useEffect(() => {
     document.documentElement.classList.toggle("dark", isDark);
     try {
@@ -23,6 +24,7 @@ export default function App() {
     } catch (_) {}
   }, [isDark]);
 
+  // Subscribe to debug events from backend
   useEffect(() => {
     const id = DebugService.onDebugEvent((event) => {
       setEvents((prev) => [...prev, event]);
@@ -30,6 +32,7 @@ export default function App() {
     return () => DebugService.offDebugEvent(id);
   }, []);
 
+  // Create new debug session
   const createSession = async () => {
     try {
       const id = await DebugService.createSession();
@@ -38,10 +41,13 @@ export default function App() {
       await DebugService.connectWebSocket();
       DebugService.subscribeToSession(id);
     } catch (err) {
-      setStatus(`Error creating session: ${err?.message || err}`);
+      setStatus(
+        `Error creating session: ${err?.response?.data || err?.message || err}`
+      );
     }
   };
 
+  // Launch target class
   const launch = async () => {
     if (!sessionId || !mainClass) {
       setStatus("Please create a session and enter a main class.");
@@ -51,10 +57,13 @@ export default function App() {
       await DebugService.launchTarget(mainClass);
       setStatus(`Launched ${mainClass}. Waiting for events…`);
     } catch (err) {
-      setStatus(`Error launching: ${err?.message || err}`);
+      setStatus(
+        `Error launching: ${err?.response?.data || err?.message || err}`
+      );
     }
   };
 
+  // Add breakpoint
   const addBreakpoint = async () => {
     if (!sessionId || !className || !lineNumber) {
       setStatus("Enter class name and line number.");
@@ -67,7 +76,9 @@ export default function App() {
       setClassName("");
       setLineNumber("");
     } catch (err) {
-      setStatus(`Error adding breakpoint: ${err?.message || err}`);
+      setStatus(
+        `Error adding breakpoint: ${err?.response?.data || err?.message || err}`
+      );
     }
   };
 
@@ -88,6 +99,7 @@ export default function App() {
       </header>
 
       <main className="max-w-4xl mx-auto p-6 space-y-8">
+        {/* Create Session */}
         <section className="bg-white dark:bg-gray-800 rounded-xl shadow p-6">
           <h2 className="text-xl font-semibold mb-2">Create Session</h2>
           <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
@@ -101,10 +113,13 @@ export default function App() {
             {sessionId ? "Session Active" : "Create Debug Session"}
           </button>
           {sessionId && (
-            <p className="mt-2 text-sm text-emerald-500">Session ID: {sessionId}</p>
+            <p className="mt-2 text-sm text-emerald-500">
+              Session ID: {sessionId}
+            </p>
           )}
         </section>
 
+        {/* Launch Target */}
         <section className="bg-white dark:bg-gray-800 rounded-xl shadow p-6">
           <h2 className="text-xl font-semibold mb-2">Launch Target</h2>
           <div className="flex gap-3 items-center">
@@ -125,6 +140,7 @@ export default function App() {
           </div>
         </section>
 
+        {/* Breakpoints */}
         <section className="bg-white dark:bg-gray-800 rounded-xl shadow p-6">
           <h2 className="text-xl font-semibold mb-2">Breakpoints</h2>
           <div className="flex flex-wrap gap-3 items-end">
@@ -159,20 +175,28 @@ export default function App() {
           <ul className="mt-4 space-y-2">
             {breakpoints.map((bp, idx) => (
               <li key={idx} className="flex justify-between">
-                <span className="font-mono">{bp.className}:{bp.lineNumber}</span>
+                <span className="font-mono">
+                  {bp.className}:{bp.lineNumber}
+                </span>
               </li>
             ))}
           </ul>
         </section>
 
+        {/* Debug Events */}
         <section className="bg-white dark:bg-gray-800 rounded-xl shadow p-6">
           <h2 className="text-xl font-semibold mb-2">Debug Events</h2>
           <div className="max-h-64 overflow-y-auto space-y-2 border-t dark:border-gray-700 pt-3">
             {events.length === 0 ? (
-              <p className="text-sm text-gray-600 dark:text-gray-300">No events yet…</p>
+              <p className="text-sm text-gray-600 dark:text-gray-300">
+                No events yet…
+              </p>
             ) : (
               events.map((ev, i) => (
-                <div key={i} className="bg-gray-100 dark:bg-gray-700 rounded p-2 font-mono text-sm">
+                <div
+                  key={i}
+                  className="bg-gray-100 dark:bg-gray-700 rounded p-2 font-mono text-sm"
+                >
                   {JSON.stringify(ev)}
                 </div>
               ))
@@ -191,4 +215,3 @@ export default function App() {
     </div>
   );
 }
-
