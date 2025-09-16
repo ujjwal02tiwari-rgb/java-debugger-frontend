@@ -1,91 +1,91 @@
-import axios from 'axios';
-import SockJS from 'sockjs-client';
-import Stomp from 'stompjs';
+import axios from "axios";
+import API_BASE_URL from "../config";
 
-class DebugService {
-  constructor() {
-    this.baseURL = import.meta.env.VITE_API_BASE_URL || '';
-    this.socket = null;
-    this.stompClient = null;
-    this.sessionId = null;
-    this.eventCallbacks = new Map();
-  }
+// Store subscribers for debug events
+let eventListeners = {};
+let nextListenerId = 0;
+let eventSource = null;
 
+const DebugService = {
+  // ---- Create Session ----
   async createSession() {
-    const { data } = await axios.post(`${this.baseURL}/api/debug/session`);
-    this.sessionId = data.sessionId;
-    return this.sessionId;
-  }
+    const res = await axios.post(`${API_BASE_URL}/sessions`);
+    return res.data; // backend returns sessionId string
+  },
 
-  async launchTarget(mainClass) {
-    if (!this.sessionId) throw new Error('No active session');
-    const { data } = await axios.post(
-      `${this.baseURL}/api/debug/session/${this.sessionId}/launch`,
-      { mainClass, classpath: '' }
-    );
-    return data;
-  }
+  // ---- Launch Target ----
+  async launchTarget(target) {
+    const res = await axios.post(`${API_BASE_URL}/launch`, { target });
+    return res.data;
+  },
 
+  // ---- Add Breakpoint ----
   async addBreakpoint(className, line) {
-    if (!this.sessionId) throw new Error('No active session');
-    const { data } = await axios.post(
-      `${this.baseURL}/api/debug/session/${this.sessionId}/breakpoint`,
-      { className, line }
-    );
-    return data;
-  }
-
-  connectWebSocket() {
-    return new Promise((resolve, reject) => {
-      try {
-        this.socket = new SockJS(`${this.baseURL}/ws`);
-        this.stompClient = Stomp.over(this.socket);
-        // Disable debug logging
-        this.stompClient.debug = null;
-        this.stompClient.connect({}, () => resolve(), (error) => reject(error));
-      } catch (e) {
-        reject(e);
-      }
+    const res = await axios.post(`${API_BASE_URL}/breakpoints`, {
+      className,
+      line,
     });
-  }
+    return res.data;
+  },
 
-  subscribeToSession(sessionId) {
-    if (this.stompClient && this.stompClient.connected) {
-      this.stompClient.subscribe(`/topic/debug/${sessionId}`, (message) => {
-        try {
-          const event = JSON.parse(message.body);
-          this.handleDebugEvent(event);
-        } catch (e) {
-          console.error('Error parsing debug event:', e);
-        }
-      });
+  // ---- Connect to SSE stream ----
+  async connectWebSocket() {
+    if (eventSource) {
+      eventSource.close();
     }
-  }
+    eventSource = new EventSource(`${API_BASE_URL}/events`);
 
-  handleDebugEvent(event) {
-    this.eventCallbacks.forEach((cb) => {
+    eventSource.onmessage = (e) => {
+      // default message
       try {
-        cb(event);
-      } catch (e) {
-        console.error('Event callback error:', e);
+        const data = JSON.parse(e.data);
+        for (let id in eventListeners) {
+          eventListeners[id](data);
+        }
+      } catch {
+        for (let id in eventListeners) {
+          eventListeners[id](e.data);
+        }
+      }
+    };
+
+    eventSource.addEventListener("debug", (e) => {
+      try {
+        const data = JSON.parse(e.data);
+        for (let id in eventListeners) {
+          eventListeners[id](data);
+        }
+      } catch {
+        for (let id in eventListeners) {
+          eventListeners[id](e.data);
+        }
       }
     });
-  }
 
-  onDebugEvent(cb) {
-    const id = `${Date.now()}_${Math.random()}`;
-    this.eventCallbacks.set(id, cb);
+    eventSource.onerror = (err) => {
+      console.error("SSE connection error:", err);
+      eventSource.close();
+      eventSource = null;
+    };
+  },
+
+  // ---- Subscribe to events ----
+  onDebugEvent(callback) {
+    const id = nextListenerId++;
+    eventListeners[id] = callback;
     return id;
-  }
+  },
 
+  // ---- Unsubscribe ----
   offDebugEvent(id) {
-    this.eventCallbacks.delete(id);
-  }
+    delete eventListeners[id];
+  },
 
-  disconnect() {
-    if (this.stompClient) this.stompClient.disconnect();
-    this.eventCallbacks.clear();
-  }
-}
+  // ---- Session Subscription (optional stub) ----
+  subscribeToSession(sessionId) {
+    // You could send a message if backend supported WS
+    console.log(`Subscribed to session: ${sessionId}`);
+  },
+};
 
-export default new DebugService();
+export default DebugService;
