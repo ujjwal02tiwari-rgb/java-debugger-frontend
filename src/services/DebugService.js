@@ -1,7 +1,6 @@
 import axios from "axios";
 import API_BASE_URL from "../config";
 
-// Store subscribers for debug events
 let eventListeners = {};
 let nextListenerId = 0;
 let eventSource = null;
@@ -14,8 +13,8 @@ const DebugService = {
   },
 
   // ---- Launch Target ----
-  async launchTarget(target) {
-    const res = await axios.post(`${API_BASE_URL}/launch`, { target });
+  async launchTarget(mainClass) {
+    const res = await axios.post(`${API_BASE_URL}/launch`, { mainClass });
     return res.data;
   },
 
@@ -35,35 +34,23 @@ const DebugService = {
     }
     eventSource = new EventSource(`${API_BASE_URL}/events`);
 
+    // Default message handler
     eventSource.onmessage = (e) => {
-      // default message
-      try {
-        const data = JSON.parse(e.data);
-        for (let id in eventListeners) {
-          eventListeners[id](data);
-        }
-      } catch {
-        for (let id in eventListeners) {
-          eventListeners[id](e.data);
-        }
-      }
+      this._notifyListeners({ type: "message", data: e.data });
     };
 
+    // Explicit event listeners
+    eventSource.addEventListener("init", (e) => {
+      this._notifyListeners({ type: "init", data: e.data });
+    });
+
     eventSource.addEventListener("debug", (e) => {
-      try {
-        const data = JSON.parse(e.data);
-        for (let id in eventListeners) {
-          eventListeners[id](data);
-        }
-      } catch {
-        for (let id in eventListeners) {
-          eventListeners[id](e.data);
-        }
-      }
+      this._notifyListeners({ type: "debug", data: e.data });
     });
 
     eventSource.onerror = (err) => {
       console.error("SSE connection error:", err);
+      this._notifyListeners({ type: "error", data: "SSE connection error" });
       eventSource.close();
       eventSource = null;
     };
@@ -81,9 +68,19 @@ const DebugService = {
     delete eventListeners[id];
   },
 
-  // ---- Session Subscription (optional stub) ----
+  // ---- Internal notifier ----
+  _notifyListeners(event) {
+    for (let id in eventListeners) {
+      try {
+        eventListeners[id](event);
+      } catch (err) {
+        console.error("Listener error:", err);
+      }
+    }
+  },
+
+  // ---- Session subscription (stub) ----
   subscribeToSession(sessionId) {
-    // You could send a message if backend supported WS
     console.log(`Subscribed to session: ${sessionId}`);
   },
 };
