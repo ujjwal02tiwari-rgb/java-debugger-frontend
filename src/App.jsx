@@ -32,6 +32,18 @@ export default function App() {
     return () => DebugService.offDebugEvent(id);
   }, []);
 
+  const handleError = (prefix, err) => {
+    const msg =
+      err?.response?.data?.message ||
+      err?.response?.data?.error ||
+      (typeof err?.response?.data === "string"
+        ? err.response.data
+        : null) ||
+      err?.message ||
+      "Unknown error";
+    setStatus(`${prefix}: ${msg}`);
+  };
+
   const createSession = async () => {
     try {
       const id = await DebugService.createSession();
@@ -40,9 +52,7 @@ export default function App() {
       await DebugService.connectWebSocket();
       DebugService.subscribeToSession(id);
     } catch (err) {
-      setStatus(
-        `Error creating session: ${err?.response?.data || err?.message || err}`
-      );
+      handleError("Error creating session", err);
     }
   };
 
@@ -52,12 +62,10 @@ export default function App() {
       return;
     }
     try {
-      await DebugService.launchTarget(mainClass);
-      setStatus(`Launched ${mainClass}. Waiting for events…`);
+      const msg = await DebugService.launchTarget(mainClass);
+      setStatus(msg);
     } catch (err) {
-      setStatus(
-        `Error launching: ${err?.response?.data || err?.message || err}`
-      );
+      handleError("Error launching", err);
     }
   };
 
@@ -67,15 +75,16 @@ export default function App() {
       return;
     }
     try {
-      await DebugService.addBreakpoint(className, parseInt(lineNumber, 10));
+      const msg = await DebugService.addBreakpoint(
+        className,
+        parseInt(lineNumber, 10)
+      );
       setBreakpoints((prev) => [...prev, { className, lineNumber }]);
-      setStatus(`Breakpoint added: ${className}:${lineNumber}`);
+      setStatus(msg);
       setClassName("");
       setLineNumber("");
     } catch (err) {
-      setStatus(
-        `Error adding breakpoint: ${err?.response?.data || err?.message || err}`
-      );
+      handleError("Error adding breakpoint", err);
     }
   };
 
