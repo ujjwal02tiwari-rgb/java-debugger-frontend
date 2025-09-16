@@ -24,7 +24,7 @@ export default function App() {
     } catch (_) {}
   }, [isDark]);
 
-  // Subscribe to debug events from backend
+  // Subscribe to debug events
   useEffect(() => {
     const id = DebugService.onDebugEvent((event) => {
       setEvents((prev) => [...prev, event]);
@@ -32,7 +32,6 @@ export default function App() {
     return () => DebugService.offDebugEvent(id);
   }, []);
 
-  // Create new debug session
   const createSession = async () => {
     try {
       const id = await DebugService.createSession();
@@ -47,7 +46,6 @@ export default function App() {
     }
   };
 
-  // Launch target class
   const launch = async () => {
     if (!sessionId || !mainClass) {
       setStatus("Please create a session and enter a main class.");
@@ -63,7 +61,6 @@ export default function App() {
     }
   };
 
-  // Add breakpoint
   const addBreakpoint = async () => {
     if (!sessionId || !className || !lineNumber) {
       setStatus("Enter class name and line number.");
@@ -102,9 +99,6 @@ export default function App() {
         {/* Create Session */}
         <section className="bg-white dark:bg-gray-800 rounded-xl shadow p-6">
           <h2 className="text-xl font-semibold mb-2">Create Session</h2>
-          <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
-            Start a new debugging session.
-          </p>
           <button
             onClick={createSession}
             disabled={!!sessionId}
@@ -195,9 +189,17 @@ export default function App() {
               events.map((ev, i) => (
                 <div
                   key={i}
-                  className="bg-gray-100 dark:bg-gray-700 rounded p-2 font-mono text-sm"
+                  className={`rounded p-2 font-mono text-sm ${
+                    ev.type === "init"
+                      ? "bg-emerald-100 dark:bg-emerald-700 text-emerald-800 dark:text-emerald-100"
+                      : ev.type === "debug"
+                      ? "bg-blue-100 dark:bg-blue-700 text-blue-800 dark:text-blue-100"
+                      : ev.type === "error"
+                      ? "bg-red-100 dark:bg-red-700 text-red-800 dark:text-red-100"
+                      : "bg-gray-100 dark:bg-gray-700 text-gray-200"
+                  }`}
                 >
-                  {JSON.stringify(ev)}
+                  [{ev.type}] {ev.data}
                 </div>
               ))
             )}
