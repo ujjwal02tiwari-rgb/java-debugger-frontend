@@ -9,13 +9,13 @@ const DebugService = {
   // ---- Create Session ----
   async createSession() {
     const res = await axios.post(`${API_BASE_URL}/sessions`);
-    return res.data; // backend returns sessionId string
+    return res.data.sessionId; // backend now returns { sessionId: "..." }
   },
 
   // ---- Launch Target ----
   async launchTarget(mainClass) {
     const res = await axios.post(`${API_BASE_URL}/launch`, { mainClass });
-    return res.data;
+    return res.data.message; // backend returns { message: "..." }
   },
 
   // ---- Add Breakpoint ----
@@ -24,7 +24,7 @@ const DebugService = {
       className,
       line,
     });
-    return res.data;
+    return res.data.message; // backend returns { message: "..." }
   },
 
   // ---- Connect to SSE stream ----
@@ -34,12 +34,10 @@ const DebugService = {
     }
     eventSource = new EventSource(`${API_BASE_URL}/events`);
 
-    // Default message handler
     eventSource.onmessage = (e) => {
       this._notifyListeners({ type: "message", data: e.data });
     };
 
-    // Explicit event listeners
     eventSource.addEventListener("init", (e) => {
       this._notifyListeners({ type: "init", data: e.data });
     });
@@ -56,19 +54,16 @@ const DebugService = {
     };
   },
 
-  // ---- Subscribe to events ----
   onDebugEvent(callback) {
     const id = nextListenerId++;
     eventListeners[id] = callback;
     return id;
   },
 
-  // ---- Unsubscribe ----
   offDebugEvent(id) {
     delete eventListeners[id];
   },
 
-  // ---- Internal notifier ----
   _notifyListeners(event) {
     for (let id in eventListeners) {
       try {
@@ -79,7 +74,6 @@ const DebugService = {
     }
   },
 
-  // ---- Session subscription (stub) ----
   subscribeToSession(sessionId) {
     console.log(`Subscribed to session: ${sessionId}`);
   },
